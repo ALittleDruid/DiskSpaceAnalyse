@@ -10,9 +10,8 @@ namespace DiskSpaceAnalyse.Models
     public class FolderTreeModel : PropertyChangedBase
     {
         private long size;
-        private int fileCount;
         private int folderCount;
-        private string folderName;
+        private int fileCount;
 
         public long Size
         {
@@ -43,17 +42,11 @@ namespace DiskSpaceAnalyse.Models
         }
         public string FolderName
         {
-            get => folderName;
-            set
-            {
-                folderName = value;
-                NotifyOfPropertyChange(() => FolderName);
-            }
+            get;
         }
         public FolderTreeModel Parent
         {
             get;
-            private set;
         }
         public BindableCollection<FolderTreeModel> Children { get; } = new BindableCollection<FolderTreeModel>();
 
@@ -93,14 +86,14 @@ namespace DiskSpaceAnalyse.Models
                         {
                             item.Analyse();
                         }
-                        var tmp = new BindableCollection<FolderTreeModel>(Children);
-                        Children.Clear();
-                        Children.AddRange(tmp.OrderByDescending(x => x.Size));
-                        Parent.Size += Size;
                     }
                     catch
                     {
                     }
+                    var tmp = new BindableCollection<FolderTreeModel>(Children);
+                    Children.Clear();
+                    Children.AddRange(tmp.OrderByDescending(x => x.Size));
+                    Parent.Size += Size;
                 }
             }
 
@@ -129,10 +122,11 @@ namespace DiskSpaceAnalyse.Models
                 try
                 {
                     Directory.Delete(model.FolderName, true);
-                    if (Parent != null)
+                    FolderTreeModel p = Parent;
+                    if (p != null)
                     {
-                        Parent.Children.Remove(model);
-                        FolderTreeModel p = Parent;
+                        p.Children.Remove(model);
+                        p.FolderCount--;
                         while (p != null)
                         {
                             p.Size -= model.Size;

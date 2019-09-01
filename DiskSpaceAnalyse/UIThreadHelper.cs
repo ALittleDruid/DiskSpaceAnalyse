@@ -19,7 +19,7 @@ namespace DiskSpaceAnalyse
         {
             if (Thread.CurrentThread != Application.Current.Dispatcher.Thread)
             {
-                throw new Exception("This object must in main thread");
+                throw new Exception("This object must on main thread");
             }
             thread = new Thread(() =>
             {
