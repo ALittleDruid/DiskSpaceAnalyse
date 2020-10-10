@@ -40,27 +40,40 @@ namespace DiskSpaceAnalyse.Models
                 NotifyOfPropertyChange(() => FolderCount);
             }
         }
+
         public string FolderName
         {
             get;
         }
+
         public FolderTreeModel Parent
         {
             get;
         }
+
         public BindableCollection<FolderTreeModel> Children { get; } = new BindableCollection<FolderTreeModel>();
 
-        public FolderTreeModel(string rootPath, FolderTreeModel parent)
+        public string RootPath { get; }
+
+        public FolderTreeModel(string path, FolderTreeModel parent)
         {
-            FolderName = rootPath;
+            RootPath = path;
+            if (!string.IsNullOrEmpty(path))
+            {
+                FolderName = Path.GetFileName(path);
+            }
+            if (string.IsNullOrEmpty(FolderName))
+            {
+                FolderName = path;
+            }
             Parent = parent;
         }
 
         public void Analyse()
         {
-            if (DiskSpaceUtility.Analyse && Parent != null && !string.IsNullOrEmpty(FolderName) && Directory.Exists(FolderName))
+            if (DiskSpaceUtility.Analyse && Parent != null && !string.IsNullOrEmpty(RootPath) && Directory.Exists(RootPath))
             {
-                DirectoryInfo di = new DirectoryInfo(FolderName);
+                DirectoryInfo di = new DirectoryInfo(RootPath);
                 if ((di.Attributes & FileAttributes.Directory) != 0)
                 {
                     try
@@ -101,9 +114,9 @@ namespace DiskSpaceAnalyse.Models
 
         public void OpenFolder(FolderTreeModel model)
         {
-            if (model != null && Directory.Exists(model.FolderName))
+            if (model != null && Directory.Exists(model.RootPath))
             {
-                Process.Start(model.FolderName);
+                Process.Start(model.RootPath);
             }
         }
 
@@ -111,17 +124,17 @@ namespace DiskSpaceAnalyse.Models
         {
             if (model != null)
             {
-                Clipboard.SetDataObject(model.FolderName);
+                Clipboard.SetDataObject(model.RootPath);
             }
         }
 
         public void DeleteFolder(FolderTreeModel model)
         {
-            if (model != null && Directory.Exists(model.FolderName))
+            if (model != null && Directory.Exists(model.RootPath))
             {
                 try
                 {
-                    Directory.Delete(model.FolderName, true);
+                    Directory.Delete(model.RootPath, true);
                     FolderTreeModel p = Parent;
                     if (p != null)
                     {
