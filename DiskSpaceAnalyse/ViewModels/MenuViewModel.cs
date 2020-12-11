@@ -28,6 +28,7 @@ namespace DiskSpaceAnalyse.ViewModels
         {
             if (feature != null)
             {
+                string last = DiskSpaceUtility.RootPath;
                 DiskSpaceUtility.RootPath = feature.RootPath;
                 if (string.IsNullOrEmpty(feature.RootPath))
                 {
@@ -43,7 +44,11 @@ namespace DiskSpaceAnalyse.ViewModels
                         }
                     }
                 }
-                if (!string.IsNullOrEmpty(DiskSpaceUtility.RootPath))
+                if (string.IsNullOrEmpty(DiskSpaceUtility.RootPath))
+                {
+                    DiskSpaceUtility.RootPath = last;
+                }
+                else
                 {
                     navigationService.NavigateToViewModel(typeof(FolderTreeViewModel));
                 }

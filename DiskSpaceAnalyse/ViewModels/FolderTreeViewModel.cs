@@ -1,7 +1,7 @@
 ﻿using Caliburn.Micro;
 using DiskSpaceAnalyse.Models;
 using System;
-using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
 
@@ -11,9 +11,9 @@ namespace DiskSpaceAnalyse.ViewModels
     {
         private readonly INavigationService navigationService;
 
-        private Thread analyse;
         private string workState;
         private bool working;
+        private bool back;
         public FolderTreeModel FolderTree { get; } = new FolderTreeModel(string.Empty, null);
         public string WorkState
         {
@@ -37,15 +37,7 @@ namespace DiskSpaceAnalyse.ViewModels
             {
                 DiskSpaceUtility.Analyse = false;
                 e.Cancel = true;
-                UIThreadHelper.GetInstance().AddWork(() =>
-                {
-                    if (analyse != null)
-                    {
-                        analyse.Join();
-                    }
-                    Application.Current.Dispatcher.Invoke(() => navigationService.GoBack()); ;
-
-                });
+                back = true;
             }
 
         }
@@ -53,9 +45,14 @@ namespace DiskSpaceAnalyse.ViewModels
         protected override void OnViewLoaded(object view)
         {
             base.OnViewLoaded(view);
+            if (string.IsNullOrEmpty(DiskSpaceUtility.RootPath))
+            {
+                navigationService.GoBack();
+                return;
+            }
             DiskSpaceUtility.Analyse = true;
-
-            analyse = new Thread(() =>
+            back = false;
+            Task.Run(() =>
             {
                 working = true;
                 WorkState = "Analysing, please wait";
@@ -65,12 +62,11 @@ namespace DiskSpaceAnalyse.ViewModels
                 d.Analyse();
                 WorkState = $"Analyse finish, {(Environment.TickCount - t1) / 1000.0:0.##} s cost";
                 working = false;
-            })
-            {
-                Name = "Analyse"
-            };
-            analyse.Start();
-
+                if (back)
+                {
+                    Application.Current.Dispatcher.Invoke(navigationService.GoBack);
+                }
+            });
         }
 
         protected override void OnDeactivate(bool close)

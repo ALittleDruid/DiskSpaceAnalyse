@@ -3,6 +3,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace DiskSpaceAnalyse.Models
@@ -128,24 +130,62 @@ namespace DiskSpaceAnalyse.Models
             }
         }
 
-        public void DeleteFolder(FolderTreeModel model)
+        public async Task DeleteFolder(FolderTreeModel model)
+        {
+            await DeleteFolderAsync(model);
+        }
+
+        private async Task DeleteFolderAsync(FolderTreeModel model)
         {
             if (model != null && Directory.Exists(model.RootPath))
             {
                 try
                 {
-                    Directory.Delete(model.RootPath, true);
-                    FolderTreeModel p = Parent;
-                    if (p != null)
+                    int size = IntPtr.Size;
+                    IntPtr intPtr;
+                    Type type;
+                    int len;
+                    if (size == 4)
                     {
-                        p.Children.Remove(model);
-                        p.FolderCount--;
-                        while (p != null)
+                        len = Marshal.SizeOf<SHFILEOPSTRUCTWWIN32>();
+                        type = typeof(SHFILEOPSTRUCTWWIN32);
+                        SHFILEOPSTRUCTWWIN32 tmp = new SHFILEOPSTRUCTWWIN32();
+                        intPtr = Marshal.AllocHGlobal(len);
+                        tmp.Func = 3;
+                        tmp.From = model.RootPath + "\0";
+                        tmp.Flags = 0x0040;
+                        Marshal.StructureToPtr(tmp, intPtr, false);
+                    }
+                    else
+                    {
+                        len = Marshal.SizeOf<SHFILEOPSTRUCTWWIN64>();
+                        type = typeof(SHFILEOPSTRUCTWWIN64);
+                        SHFILEOPSTRUCTWWIN64 tmp = new SHFILEOPSTRUCTWWIN64();
+                        intPtr = Marshal.AllocHGlobal(len);
+                        tmp.Func = 3;
+                        tmp.From = model.RootPath + "\0";
+                        tmp.Flags = 0x0040;
+                        Marshal.StructureToPtr(tmp, intPtr, false);
+                    }
+
+                    int n = await Task.Run(() => Win32API.SHFileOperationW(intPtr));
+                    Marshal.DestroyStructure(intPtr, type);
+                    Marshal.FreeHGlobal(intPtr);
+                    if (n == 0)
+                    {
+                        FolderTreeModel p = Parent;
+                        if (p != null)
                         {
-                            p.Size -= model.Size;
-                            p = p.Parent;
+                            p.Children.Remove(model);
+                            p.FolderCount--;
+                            while (p != null)
+                            {
+                                p.Size -= model.Size;
+                                p = p.Parent;
+                            }
                         }
                     }
+
                 }
                 catch (Exception ex)
                 {
