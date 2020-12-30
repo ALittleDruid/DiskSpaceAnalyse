@@ -141,36 +141,24 @@ namespace DiskSpaceAnalyse.Models
             {
                 try
                 {
+                    int n;
                     int size = IntPtr.Size;
-                    IntPtr intPtr;
-                    Type type;
-                    int len;
                     if (size == 4)
                     {
-                        len = Marshal.SizeOf<SHFILEOPSTRUCTWWIN32>();
-                        type = typeof(SHFILEOPSTRUCTWWIN32);
                         SHFILEOPSTRUCTWWIN32 tmp = new SHFILEOPSTRUCTWWIN32();
-                        intPtr = Marshal.AllocHGlobal(len);
                         tmp.Func = 3;
                         tmp.From = model.RootPath + "\0";
-                        tmp.Flags = 0x0040;
-                        Marshal.StructureToPtr(tmp, intPtr, false);
+                        tmp.Flags = 0x0040; 
+                        n = await Task.Run(() => Win32API.SHFileOperation(ref tmp));
                     }
                     else
                     {
-                        len = Marshal.SizeOf<SHFILEOPSTRUCTWWIN64>();
-                        type = typeof(SHFILEOPSTRUCTWWIN64);
                         SHFILEOPSTRUCTWWIN64 tmp = new SHFILEOPSTRUCTWWIN64();
-                        intPtr = Marshal.AllocHGlobal(len);
                         tmp.Func = 3;
                         tmp.From = model.RootPath + "\0";
                         tmp.Flags = 0x0040;
-                        Marshal.StructureToPtr(tmp, intPtr, false);
+                        n = await Task.Run(() => Win32API.SHFileOperation(ref tmp));
                     }
-
-                    int n = await Task.Run(() => Win32API.SHFileOperationW(intPtr));
-                    Marshal.DestroyStructure(intPtr, type);
-                    Marshal.FreeHGlobal(intPtr);
                     if (n == 0)
                     {
                         FolderTreeModel p = Parent;

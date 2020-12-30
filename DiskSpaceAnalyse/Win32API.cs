@@ -5,8 +5,11 @@ namespace DiskSpaceAnalyse
 {
     public class Win32API
     {
-        [DllImport("Shell32")]
-        public static extern int SHFileOperationW(IntPtr handle);
+        [DllImport("Shell32", CharSet = CharSet.Unicode)]
+        public static extern int SHFileOperation([In]ref SHFILEOPSTRUCTWWIN32 handle);
+
+        [DllImport("Shell32", CharSet = CharSet.Unicode)]
+        public static extern int SHFileOperation([In] ref SHFILEOPSTRUCTWWIN64 handle);
 
     }
 }
