@@ -1,6 +1,7 @@
 ﻿using Caliburn.Micro;
 using DiskSpaceAnalyse.Models;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
@@ -69,10 +70,10 @@ namespace DiskSpaceAnalyse.ViewModels
             });
         }
 
-        protected override void OnDeactivate(bool close)
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             navigationService.Navigating -= NavigationService_Navigating;
-            base.OnDeactivate(close);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
     }
 }

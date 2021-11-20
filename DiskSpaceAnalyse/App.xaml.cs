@@ -3,7 +3,7 @@
 namespace DiskSpaceAnalyse
 {
     /// <summary>
-    /// App.xaml 的交互逻辑
+    /// Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application
     {

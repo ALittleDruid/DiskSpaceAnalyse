@@ -1,6 +1,7 @@
 ﻿using Caliburn.Micro;
+using Microsoft.WindowsAPICodePack.Dialogs;
 using System.IO;
-using System.Windows.Forms;
+using System.Linq;
 using Screen = Caliburn.Micro.Screen;
 
 namespace DiskSpaceAnalyse.ViewModels
@@ -17,6 +18,10 @@ namespace DiskSpaceAnalyse.ViewModels
             Features = new BindableCollection<FeatureViewModel>();
             foreach (var item in drivews)
             {
+                if (item.DriveType == DriveType.Network)
+                {
+                    continue;
+                }
                 Features.Add(new FeatureViewModel(item.Name, DiskSpaceUtility.GetDiskDetail(item.TotalSize, item.TotalFreeSpace), item.Name));
             }
             Features.Add(new FeatureViewModel("Select a Folder", "Select a folder to analyse", string.Empty));
@@ -32,15 +37,15 @@ namespace DiskSpaceAnalyse.ViewModels
                 DiskSpaceUtility.RootPath = feature.RootPath;
                 if (string.IsNullOrEmpty(feature.RootPath))
                 {
-                    using (var dilog = new FolderBrowserDialog
+                    using (var dilog = new CommonOpenFileDialog
                     {
-                        Description = "Select a folder to analyse"
+                        IsFolderPicker = true
                     })
                     {
                         var d = dilog.ShowDialog();
-                        if (d == DialogResult.OK || d == DialogResult.Yes)
+                        if (d == CommonFileDialogResult.Ok)
                         {
-                            DiskSpaceUtility.RootPath = dilog.SelectedPath;
+                            DiskSpaceUtility.RootPath = dilog.FileNames.FirstOrDefault();
                         }
                     }
                 }

@@ -3,7 +3,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -118,7 +117,7 @@ namespace DiskSpaceAnalyse.Models
         {
             if (model != null && Directory.Exists(model.RootPath))
             {
-                Process.Start(model.RootPath);
+                Process.Start("explorer.exe", model.RootPath);
             }
         }
 
@@ -145,19 +144,30 @@ namespace DiskSpaceAnalyse.Models
                     int size = IntPtr.Size;
                     if (size == 4)
                     {
-                        SHFILEOPSTRUCTWWIN32 tmp = new SHFILEOPSTRUCTWWIN32();
-                        tmp.Func = 3;
-                        tmp.From = model.RootPath + "\0";
-                        tmp.Flags = 0x0040; 
-                        n = await Task.Run(() => Win32API.SHFileOperation(ref tmp));
+
+                        n = await Task.Run(() =>
+                        {
+                            SHFILEOPSTRUCTWWIN32 tmp = new SHFILEOPSTRUCTWWIN32
+                            {
+                                Func = 3,
+                                From = model.RootPath + "\0",
+                                Flags = 0x0040
+                            };
+                            return Win32API.SHFileOperation(tmp);
+                        });
                     }
                     else
                     {
-                        SHFILEOPSTRUCTWWIN64 tmp = new SHFILEOPSTRUCTWWIN64();
-                        tmp.Func = 3;
-                        tmp.From = model.RootPath + "\0";
-                        tmp.Flags = 0x0040;
-                        n = await Task.Run(() => Win32API.SHFileOperation(ref tmp));
+                        n = await Task.Run(() =>
+                        {
+                            SHFILEOPSTRUCTWWIN64 tmp = new SHFILEOPSTRUCTWWIN64
+                            {
+                                Func = 3,
+                                From = model.RootPath + "\0",
+                                Flags = 0x0040
+                            };
+                            return Win32API.SHFileOperation(tmp);
+                        });
                     }
                     if (n == 0)
                     {

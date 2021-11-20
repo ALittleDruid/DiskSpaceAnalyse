@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace DiskSpaceAnalyse
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Unicode)]
-    public struct SHFILEOPSTRUCTWWIN32
+    public ref struct SHFILEOPSTRUCTWWIN32
     {
         public IntPtr Hwnd;
         public uint Func;
@@ -17,7 +17,7 @@ namespace DiskSpaceAnalyse
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct SHFILEOPSTRUCTWWIN64
+    public ref struct SHFILEOPSTRUCTWWIN64
     {
         public IntPtr Hwnd;
         public uint Func;
