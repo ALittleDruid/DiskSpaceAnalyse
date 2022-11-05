@@ -1,14 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Data;
 
 namespace DiskSpaceAnalyse
 {
-    public static class DiskSpaceUtility
+    public class DiskSpaceUtility
     {
         private readonly static string[] KMG = new string[] { "B", "KB", "MB", "GB" };
-
-        public static string RootPath { get; set; }
         public static bool Analyse { get; set; }
 
         public static string GetFriendlySize(float size)

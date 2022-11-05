@@ -1,4 +1,4 @@
-﻿using DiskSpaceAnalyse.ViewModels;
+﻿using DiskSpaceAnalyse.Views;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,16 +14,21 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace DiskSpaceAnalyse.Views
+namespace DiskSpaceAnalyse
 {
     /// <summary>
-    /// FeatureView.xaml 的交互逻辑
+    /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class FeatureView : UserControl
+    public partial class MainWindow : Window
     {
-        public FeatureView()
+        public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void Grid_Loaded(object sender, RoutedEventArgs e)
+        {
+            NavigationFrame.Navigate(new MenuView());
         }
     }
 }

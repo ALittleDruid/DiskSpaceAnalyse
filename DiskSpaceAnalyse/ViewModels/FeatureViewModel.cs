@@ -1,18 +1,27 @@
-﻿namespace DiskSpaceAnalyse.ViewModels
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System;
+
+namespace DiskSpaceAnalyse.ViewModels
 {
-    public class FeatureViewModel
+    [ObservableObject]
+    public partial class FeatureViewModel 
     {
-        public FeatureViewModel(string title, string description, string rootpath)
+        [ObservableProperty]
+        private string title;
+
+        [ObservableProperty]
+        private string description;
+
+        [ObservableProperty]
+        private string rootPath;
+
+        public event Action<string> Click;
+
+        [RelayCommand]
+        private void ShowFeature()
         {
-            RootPath = rootpath;
-            Title = title;
-            Description = description;
+            Click?.Invoke(RootPath);
         }
-
-        public string Title { get; }
-
-        public string Description { get; }
-
-        public string RootPath { get; }
     }
 }

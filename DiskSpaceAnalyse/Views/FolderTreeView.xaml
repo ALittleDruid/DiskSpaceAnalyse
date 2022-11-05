@@ -1,14 +1,27 @@
-﻿<Page x:Class="DiskSpaceAnalyse.Views.FolderTreeView"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:cal="http://www.caliburnproject.org"
-      xmlns:conv="clr-namespace:DiskSpaceAnalyse"
-      mc:Ignorable="d"
-      d:DesignHeight="450"
-      d:DesignWidth="800"
-      Title="FolderTreeView">
+﻿<Page  x:Class="DiskSpaceAnalyse.Views.FolderTreeView"
+       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+       xmlns:conv="clr-namespace:DiskSpaceAnalyse"
+       xmlns:local="clr-namespace:DiskSpaceAnalyse.Views"
+       xmlns:ViewModels="clr-namespace:DiskSpaceAnalyse.ViewModels"
+       xmlns:interactivity="http://schemas.microsoft.com/xaml/behaviors"
+       mc:Ignorable="d"
+       d:DesignHeight="450"
+       d:DesignWidth="800"
+       Title="FolderTreeView">
+    <interactivity:Interaction.Triggers>
+        <interactivity:EventTrigger EventName="Loaded">
+            <interactivity:InvokeCommandAction Command="{Binding ActivatedCommand}" />
+        </interactivity:EventTrigger>
+        <interactivity:EventTrigger EventName="Unloaded">
+            <interactivity:InvokeCommandAction Command="{Binding DeactivatedCommand}" />
+        </interactivity:EventTrigger>
+    </interactivity:Interaction.Triggers>
+    <Page.DataContext>
+        <ViewModels:FolderTreeViewModel x:Name="ViewModel" />
+    </Page.DataContext>
 
     <Grid>
         <Grid.Resources>
@@ -18,7 +31,7 @@
             <RowDefinition Height="40" />
             <RowDefinition />
         </Grid.RowDefinitions>
-        <TextBlock x:Name="WorkState"
+        <TextBlock Text="{Binding WorkState}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center" />
         <TreeView Grid.Row="1"
@@ -30,27 +43,17 @@
                         <StackPanel.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Open in Explorer"
-                                          cal:Message.Attach="OpenFolder($dataContext)" />
+                                          Command="{Binding OpenFolderCommand}" />
                                 <MenuItem  Header="Copy Full Path to ClipBoard"
-                                           cal:Message.Attach="CopyFolder($dataContext)" />
+                                           Command="{Binding CopyFolderCommand}" />
                                 <MenuItem Header="Delete Folder"
-                                          cal:Message.Attach="DeleteFolder($dataContext)" />
+                                          Command="{Binding DeleteFolderCommand}" />
                             </ContextMenu>
                         </StackPanel.ContextMenu>
-                        <TextBlock x:Name="fn"
-                                   Text="{Binding FolderName}" />
-                        <TextBlock Margin="30,0,0,0">
-                                <Run Text="Used:" />
-                                <Run Text="{Binding Size,Converter={StaticResource FileSizeConverter}}" />
-                        </TextBlock>
-                        <TextBlock Margin="30,0,0,0">
-                                <Run Text="FolderCount:" />
-                                <Run Text="{Binding FolderCount}" />
-                        </TextBlock>
-                        <TextBlock Margin="30,0,0,0">
-                                <Run Text="FileCount:" />
-                                <Run Text="{Binding FileCount}" />
-                        </TextBlock>
+                        <TextBlock Text="{Binding FolderName}" />
+                        <TextBlock Margin="30,0,0,0"><Run Text="Used:" /><Run Text=" " /><Run Text="{Binding Size, Converter={StaticResource FileSizeConverter}}" /></TextBlock>
+                        <TextBlock Margin="30,0,0,0"><Run Text="FolderCount:" /><Run Text=" " /><Run Text="{Binding FolderCount}" /></TextBlock>
+                        <TextBlock Margin="30,0,0,0"><Run Text="FileCount:" /><Run Text=" " /><Run Text="{Binding FileCount}" /></TextBlock>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>

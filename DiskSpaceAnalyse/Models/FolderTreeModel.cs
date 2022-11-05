@@ -1,46 +1,28 @@
-﻿using Caliburn.Micro;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using WinCopies.Util;
 
 namespace DiskSpaceAnalyse.Models
 {
-    public class FolderTreeModel : PropertyChangedBase
+    [ObservableObject]
+    public partial class FolderTreeModel
     {
+        [ObservableProperty]
         private long size;
+        [ObservableProperty]
         private int folderCount;
+        [ObservableProperty]
         private int fileCount;
-
-        public long Size
-        {
-            get => size;
-            set
-            {
-                size = value;
-                NotifyOfPropertyChange(() => Size);
-            }
-        }
-        public int FileCount
-        {
-            get => fileCount;
-            set
-            {
-                fileCount = value;
-                NotifyOfPropertyChange(() => FileCount);
-            }
-        }
-        public int FolderCount
-        {
-            get => folderCount;
-            set
-            {
-                folderCount = value;
-                NotifyOfPropertyChange(() => FolderCount);
-            }
-        }
 
         public string FolderName
         {
@@ -52,7 +34,7 @@ namespace DiskSpaceAnalyse.Models
             get;
         }
 
-        public BindableCollection<FolderTreeModel> Children { get; } = new BindableCollection<FolderTreeModel>();
+        public ObservableCollection<FolderTreeModel> Children { get; } = new ObservableCollection<FolderTreeModel>();
 
         public string RootPath { get; }
 
@@ -70,7 +52,12 @@ namespace DiskSpaceAnalyse.Models
             Parent = parent;
         }
 
-        public void Analyse()
+        public Task Analyse()
+        {
+            return Task.Run(async () => await EnterDirectory());
+        }
+
+        private async Task EnterDirectory()
         {
             if (DiskSpaceUtility.Analyse && Parent != null && !string.IsNullOrEmpty(RootPath) && Directory.Exists(RootPath))
             {
@@ -87,98 +74,87 @@ namespace DiskSpaceAnalyse.Models
                         {
                             Size += fi.Length;
                         }
-                        foreach (var item in dirs)
+                        var r = dirs.Where(x => (x.Attributes & FileAttributes.ReparsePoint) == 0).Select(x => new FolderTreeModel(x.FullName, this)).ToList();
+                        if (r.Any())
                         {
-                            if ((item.Attributes & FileAttributes.ReparsePoint) != 0)
+                            var tasks = r.Select(async x => await x.EnterDirectory());
+                            await Task.WhenAll(tasks);
+                            Application.Current?.Dispatcher.Invoke(() =>
                             {
-                                continue;
-                            }
-                            var d = new FolderTreeModel(item.FullName, this);
-                            Children.Add(d);
+                                Children.AddRange(r.OrderByDescending(x => x.Size));
+                            });
                         }
-                        foreach (var item in Children)
-                        {
-                            item.Analyse();
-                        }
+                        Parent.Size += Size;
+
+                        //var r = dirs.Where(x => (x.Attributes & FileAttributes.ReparsePoint) == 0).Select(x =>
+                        //{
+                        //    var tmp = new FolderTreeModel(x.FullName, this);
+                        //    tmp.EnterDirectory();
+                        //    return tmp;
+                        //}).OrderByDescending(x => x.Size).ToList();
+                        //if (r.Any())
+                        //{
+                        //    Application.Current.Dispatcher.Invoke(() =>
+                        //    {
+                        //        Children.AddRange(r);
+                        //    });
+                        //}
+                        //Parent.Size += Size;
                     }
                     catch
                     {
                     }
-                    var tmp = new BindableCollection<FolderTreeModel>(Children);
-                    Children.Clear();
-                    Children.AddRange(tmp.OrderByDescending(x => x.Size));
-                    Parent.Size += Size;
                 }
             }
-
         }
 
-        public void OpenFolder(FolderTreeModel model)
+        [RelayCommand]
+        private void OpenFolder()
         {
-            if (model != null && Directory.Exists(model.RootPath))
+            if (Directory.Exists(RootPath))
             {
-                Process.Start("explorer.exe", model.RootPath);
+                Process.Start("explorer.exe", RootPath);
             }
         }
 
-        public void CopyFolder(FolderTreeModel model)
+        [RelayCommand]
+        public void CopyFolder()
         {
-            if (model != null)
-            {
-                Clipboard.SetDataObject(model.RootPath);
-            }
+            Clipboard.SetDataObject(RootPath);
         }
 
-        public async Task DeleteFolder(FolderTreeModel model)
+        [RelayCommand]
+        public async Task DeleteFolder()
         {
-            await DeleteFolderAsync(model);
+            await DeleteFolderAsync();
         }
 
-        private async Task DeleteFolderAsync(FolderTreeModel model)
+        private async Task DeleteFolderAsync()
         {
-            if (model != null && Directory.Exists(model.RootPath))
+            if (Directory.Exists(RootPath))
             {
                 try
                 {
-                    int n;
-                    int size = IntPtr.Size;
-                    if (size == 4)
+                    int n = await Task.Run(() =>
                     {
-
-                        n = await Task.Run(() =>
+                        SHFILEOPSTRUCTWWIN64 tmp = new SHFILEOPSTRUCTWWIN64
                         {
-                            SHFILEOPSTRUCTWWIN32 tmp = new SHFILEOPSTRUCTWWIN32
-                            {
-                                Func = 3,
-                                From = model.RootPath + "\0",
-                                Flags = 0x0040
-                            };
-                            return Win32API.SHFileOperation(tmp);
-                        });
-                    }
-                    else
-                    {
-                        n = await Task.Run(() =>
-                        {
-                            SHFILEOPSTRUCTWWIN64 tmp = new SHFILEOPSTRUCTWWIN64
-                            {
-                                Func = 3,
-                                From = model.RootPath + "\0",
-                                Flags = 0x0040
-                            };
-                            return Win32API.SHFileOperation(tmp);
-                        });
-                    }
+                            Func = 3,
+                            From = RootPath + "\0",
+                            Flags = 0x0040
+                        };
+                        return SHFileOperation(tmp);
+                    });
                     if (n == 0)
                     {
                         FolderTreeModel p = Parent;
                         if (p != null)
                         {
-                            p.Children.Remove(model);
+                            p.Children.Remove(this);
                             p.FolderCount--;
                             while (p != null)
                             {
-                                p.Size -= model.Size;
+                                p.Size -= Size;
                                 p = p.Parent;
                             }
                         }
@@ -191,5 +167,21 @@ namespace DiskSpaceAnalyse.Models
                 }
             }
         }
+
+        [DllImport("Shell32", CharSet = CharSet.Unicode)]
+        private static extern int SHFileOperation(in SHFILEOPSTRUCTWWIN64 handle);
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public ref struct SHFILEOPSTRUCTWWIN64
+    {
+        public IntPtr Hwnd;
+        public uint Func;
+        public string From;
+        public string To;
+        public ushort Flags;
+        public int AnyOperationsAborted;
+        public IntPtr NameMappings;
+        public string ProgressTitle;
     }
 }
